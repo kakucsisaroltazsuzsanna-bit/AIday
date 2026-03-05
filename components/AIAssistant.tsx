@@ -71,7 +71,7 @@ export default function AIAssistant({ onOpenProjectModal }: AIAssistantProps) {
           title: description ? description.charAt(0).toUpperCase() + description.slice(1) : '',
           description: description,
         },
-        confirmation: null, // No confirmation needed, will open modal
+        confirmation: undefined, // No confirmation needed, will open modal
       };
     }
 
