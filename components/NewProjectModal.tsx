@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
-import { NewProjectFormData, GeneratedPhase, Priority, Methodology, ExperienceLevel } from '@/lib/types';
-import { generateProjectPlan, estimateProjectDuration, getMethodologyRecommendation } from '@/lib/aiPlanGenerator';
+import { NewProjectFormData, GeneratedPhase } from '@/lib/types';
+import { generateProjectPlan, getMethodologyRecommendation } from '@/lib/aiPlanGenerator';
 import ProjectInfoForm from './ProjectInfoForm';
 import ProjectSettingsForm from './ProjectSettingsForm';
 import ProjectPlanPreview from './ProjectPlanPreview';
@@ -26,19 +26,24 @@ export default function NewProjectModal({ isOpen, onClose, onSave, prefilledData
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPhase[] | null>(null);
-  const [formData, setFormData] = useState<NewProjectFormData>({
-    title: prefilledData?.title || '',
-    description: prefilledData?.description || '',
-    designBrief: prefilledData?.designBrief || '',
-    priority: prefilledData?.priority || 'Medium',
-    startDate: prefilledData?.startDate || new Date(),
-    targetDeadline: prefilledData?.targetDeadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    stakeholders: prefilledData?.stakeholders || [],
-    productArea: prefilledData?.productArea || '',
-    methodology: prefilledData?.methodology || 'Let AI choose',
-    experienceLevel: prefilledData?.experienceLevel || 'Mid-level',
-    teamSize: prefilledData?.teamSize || 2,
-    weeklyCapacity: prefilledData?.weeklyCapacity || 30,
+  const [formData, setFormData] = useState<NewProjectFormData>(() => {
+    const defaultDeadline = new Date();
+    defaultDeadline.setDate(defaultDeadline.getDate() + 30);
+
+    return {
+      title: prefilledData?.title || '',
+      description: prefilledData?.description || '',
+      designBrief: prefilledData?.designBrief || '',
+      priority: prefilledData?.priority || 'Medium',
+      startDate: prefilledData?.startDate || new Date(),
+      targetDeadline: prefilledData?.targetDeadline || defaultDeadline,
+      stakeholders: prefilledData?.stakeholders || [],
+      productArea: prefilledData?.productArea || '',
+      methodology: prefilledData?.methodology || 'Let AI choose',
+      experienceLevel: prefilledData?.experienceLevel || 'Mid-level',
+      teamSize: prefilledData?.teamSize || 2,
+      weeklyCapacity: prefilledData?.weeklyCapacity || 30,
+    };
   });
 
   if (!isOpen) return null;

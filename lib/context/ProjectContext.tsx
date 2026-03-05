@@ -10,10 +10,12 @@ interface ProjectContextType {
   weeklyCapacity: WeeklyCapacity[];
   addProject: (project: Project) => void;
   deleteProject: (projectId: string) => void;
+  duplicateProject: (projectId: string) => void;
   markProjectComplete: (projectId: string) => void;
   addTask: (projectId: string, phaseId: string, task: Omit<Task, 'id' | 'projectId'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   deleteTask: (taskId: string) => void;
+  duplicateTask: (taskId: string) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   rebalanceWorkload: (fromWeek: number, toWeek: number, taskId: string) => void;
   adjustProjectTimeline: (projectId: string, newEndWeek: number) => void;
@@ -31,6 +33,32 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const deleteProject = (projectId: string) => {
     setProjects(prev => prev.filter(p => p.id !== projectId));
+  };
+
+  const duplicateProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const newId = `project-${Date.now()}`;
+    const duplicatedProject: Project = {
+      ...project,
+      id: newId,
+      title: `${project.title} (Copy)`,
+      status: 'planning',
+      progress: 0,
+      phases: project.phases.map(phase => ({
+        ...phase,
+        id: `phase-${Date.now()}-${phase.id}`,
+        tasks: phase.tasks.map(task => ({
+          ...task,
+          id: `task-${Date.now()}-${task.id}`,
+          projectId: newId,
+          status: 'todo' as const,
+        })),
+      })),
+    };
+
+    setProjects(prev => [...prev, duplicatedProject]);
   };
 
   const markProjectComplete = (projectId: string) => {
@@ -135,6 +163,28 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     })));
   };
 
+  const duplicateTask = (taskId: string) => {
+    setProjects(prev => prev.map(project => ({
+      ...project,
+      phases: project.phases.map(phase => {
+        const taskToDuplicate = phase.tasks.find(task => task.id === taskId);
+        if (!taskToDuplicate) return phase;
+
+        const newTask: Task = {
+          ...taskToDuplicate,
+          id: `task-${Date.now()}`,
+          title: `${taskToDuplicate.title} (Copy)`,
+          status: 'todo',
+        };
+
+        return {
+          ...phase,
+          tasks: [...phase.tasks, newTask],
+        };
+      }),
+    })));
+  };
+
   const updateProject = (projectId: string, updates: Partial<Project>) => {
     setProjects(prev => prev.map(project =>
       project.id === projectId ? { ...project, ...updates } : project
@@ -234,10 +284,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         weeklyCapacity,
         addProject,
         deleteProject,
+        duplicateProject,
         markProjectComplete,
         addTask,
         updateTask,
         deleteTask,
+        duplicateTask,
         updateProject,
         rebalanceWorkload,
         adjustProjectTimeline,

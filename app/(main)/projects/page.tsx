@@ -10,7 +10,7 @@ import { NewProjectFormData, GeneratedPhase, Project } from '@/lib/types';
 import { differenceInWeeks } from 'date-fns';
 
 export default function ProjectsPage() {
-  const { projects, addProject } = useProjects();
+  const { projects, addProject, duplicateProject, deleteProject } = useProjects();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -178,7 +178,12 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              onDuplicate={duplicateProject}
+              onDelete={deleteProject}
+            />
           ))}
         </div>
       )}

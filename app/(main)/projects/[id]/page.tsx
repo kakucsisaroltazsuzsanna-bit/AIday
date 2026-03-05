@@ -1,22 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useProjects } from '@/lib/context/ProjectContext';
 import { useRouter } from 'next/navigation';
 import TaskCard from '@/components/TaskCard';
-import { ArrowLeft, MoreVertical, Download, Share2, Trash2, CheckCircle, Info, AlertTriangle } from 'lucide-react';
+import TaskDetailModal from '@/components/TaskDetailModal';
+import EditProjectModal from '@/components/EditProjectModal';
+import TimelineEditor from '@/components/TimelineEditor';
+import { ArrowLeft, MoreVertical, Download, Share2, Trash2, CheckCircle, Info, AlertTriangle, Edit2, Copy, LayoutGrid, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Task } from '@/lib/types';
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const { projects, deleteProject, markProjectComplete, updateProject } = useProjects();
+  const { projects, deleteProject, duplicateProject, markProjectComplete, updateProject, updateTask, deleteTask, duplicateTask } = useProjects();
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showEditProject, setShowEditProject] = useState(false);
+  const [viewMode, setViewMode] = useState<'phases' | 'timeline'>('phases');
 
-  const project = projects.find(p => p.id === params.id);
+  const project = projects.find(p => p.id === id);
 
   if (!project) {
     notFound();
@@ -40,6 +48,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
   const handleStatusChange = (newStatus: 'planning' | 'active' | 'on-hold' | 'completed') => {
     updateProject(project.id, { status: newStatus });
+  };
+
+  const handleDuplicate = () => {
+    duplicateProject(project.id);
+    setShowMenu(false);
+    router.push('/projects');
   };
 
   return (
@@ -109,10 +123,27 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               <div className="absolute right-0 top-12 z-20 w-56 rounded-lg border border-gray-200 bg-white shadow-lg">
                 <button
                   onClick={() => {
-                    setShowCompleteConfirm(true);
+                    setShowEditProject(true);
                     setShowMenu(false);
                   }}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
+                >
+                  <Edit2 className="h-4 w-4 text-gray-600" />
+                  <span>Edit Project</span>
+                </button>
+                <button
+                  onClick={handleDuplicate}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
+                >
+                  <Copy className="h-4 w-4 text-gray-600" />
+                  <span>Duplicate Project</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCompleteConfirm(true);
+                    setShowMenu(false);
+                  }}
+                  className="flex w-full items-center gap-3 border-t border-gray-200 px-4 py-3 text-left text-sm hover:bg-gray-50"
                 >
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span>Mark as Complete</span>
@@ -141,14 +172,44 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             Project Management Tips
           </h3>
           <div className="space-y-1 text-sm text-blue-800">
-            <p>• Click on any task card to view details and mark status</p>
+            <p>• Switch between <strong>Phases View</strong> and <strong>Timeline View</strong> using the tabs above</p>
+            <p>• In Timeline View: drag tasks horizontally to change start week, edit duration inline</p>
+            <p>• Click on any task card to view full details, edit, duplicate, or delete it</p>
+            <p>• Task modal shows project context (methodology, timeline) for better planning</p>
+            <p>• Change task status directly from the task detail modal</p>
             <p>• Change project status using the dropdown next to the title</p>
-            <p>• Use "Mark as Complete" to finish the project and mark all tasks done</p>
-            <p>• Export project data using the download button</p>
-            <p>• Delete projects you no longer need (this cannot be undone)</p>
+            <p>• Use ⋮ menu to edit, duplicate, or delete the entire project</p>
           </div>
         </div>
       )}
+
+      {/* View Mode Toggle */}
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex rounded-lg border border-gray-200 bg-white p-1">
+          <button
+            onClick={() => setViewMode('phases')}
+            className={`flex items-center gap-2 rounded px-4 py-2 text-sm font-medium transition-colors ${
+              viewMode === 'phases'
+                ? 'bg-purple-100 text-purple-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Phases View
+          </button>
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={`flex items-center gap-2 rounded px-4 py-2 text-sm font-medium transition-colors ${
+              viewMode === 'timeline'
+                ? 'bg-purple-100 text-purple-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Timeline View
+          </button>
+        </div>
+      </div>
 
       {/* Project Stats */}
       <div className="mb-8 grid gap-6 md:grid-cols-4">
@@ -217,9 +278,19 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </div>
       )}
 
-      {/* Phases */}
-      <div className="space-y-8">
-        {project.phases.map((phase) => (
+      {/* Timeline View */}
+      {viewMode === 'timeline' ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <TimelineEditor
+            phases={project.phases}
+            projectStartDate={project.startDate}
+            onUpdateTask={updateTask}
+          />
+        </div>
+      ) : (
+        /* Phases View */
+        <div className="space-y-8">
+          {project.phases.map((phase) => (
           <div key={phase.id} className="rounded-xl border border-gray-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -244,13 +315,18 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {phase.tasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => setSelectedTask(task)}
+                  />
                 ))}
               </div>
             )}
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -286,6 +362,29 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           </div>
         </div>
       )}
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={updateTask}
+          onDelete={deleteTask}
+          onDuplicate={duplicateTask}
+          projectTitle={project.title}
+          projectMethodology={project.methodology}
+          projectTimeline={project.timeline}
+        />
+      )}
+
+      {/* Edit Project Modal */}
+      <EditProjectModal
+        project={project}
+        isOpen={showEditProject}
+        onClose={() => setShowEditProject(false)}
+        onSave={updateProject}
+      />
 
       {/* Complete Confirmation Modal */}
       {showCompleteConfirm && (
