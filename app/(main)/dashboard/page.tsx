@@ -1,12 +1,15 @@
 'use client';
 
 import { useProjects } from '@/lib/context/ProjectContext';
+import { useDesignerProfile } from '@/lib/context/DesignerProfileContext';
 import ProjectCard from '@/components/ProjectCard';
+import DesignerProfileWidget from '@/components/DesignerProfileWidget';
 import { TrendingUp, Clock, AlertTriangle, Sparkles } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
 export default function DashboardPage() {
   const { projects, weeklyCapacity } = useProjects();
+  const { profile } = useDesignerProfile();
 
   const activeProjects = projects.filter(p => p.status === 'active');
   const totalTasks = projects.reduce((sum, p) =>
@@ -35,8 +38,16 @@ export default function DashboardPage() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-gray-600">Welcome back! Here's your project overview.</p>
+        <p className="mt-1 text-gray-600">
+          {profile ? `Welcome back, ${profile.name}!` : 'Welcome back!'} Here's your project overview.
+        </p>
       </div>
+
+      {profile && (
+        <div className="mb-8">
+          <DesignerProfileWidget />
+        </div>
+      )}
 
       <div className="mb-8 grid gap-6 md:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-6">

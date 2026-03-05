@@ -3,6 +3,8 @@ export type Priority = 'High' | 'Medium' | 'Low';
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type ProjectStatus = 'planning' | 'active' | 'completed' | 'on-hold';
 export type ExperienceLevel = 'Junior' | 'Mid-level' | 'Senior';
+export type DesignSpecialty = 'UI Design' | 'UX Research' | 'Product Design' | 'Visual Design' | 'Interaction Design' | 'Design Systems' | 'Service Design';
+export type ToolProficiency = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 
 export interface Task {
   id: string;
@@ -101,4 +103,22 @@ export interface GeneratedPhase {
   description: string;
   tasks: GeneratedTask[];
   color: string;
+}
+
+export interface DesignerProfile {
+  id: string;
+  name: string;
+  email: string;
+  experienceLevel: ExperienceLevel;
+  yearsOfExperience: number;
+  specialties: DesignSpecialty[];
+  skills: {
+    name: string;
+    proficiency: ToolProficiency;
+  }[];
+  weeklyAvailability: number;
+  preferredMethodologies: Methodology[];
+  bio?: string;
+  avatar?: string;
+  completedOnboarding: boolean;
 }

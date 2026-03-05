@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { NewProjectFormData, GeneratedPhase } from '@/lib/types';
 import { generateProjectPlan, getMethodologyRecommendation } from '@/lib/aiPlanGenerator';
+import { useDesignerProfile } from '@/lib/context/DesignerProfileContext';
 import ProjectInfoForm from './ProjectInfoForm';
 import ProjectSettingsForm from './ProjectSettingsForm';
 import ProjectPlanPreview from './ProjectPlanPreview';
@@ -23,6 +24,7 @@ const steps = [
 ];
 
 export default function NewProjectModal({ isOpen, onClose, onSave, prefilledData }: NewProjectModalProps) {
+  const { profile } = useDesignerProfile();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPhase[] | null>(null);
@@ -66,7 +68,7 @@ export default function NewProjectModal({ isOpen, onClose, onSave, prefilledData
     // Simulate AI processing time
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const plan = generateProjectPlan(formData);
+    const plan = generateProjectPlan(formData, profile || undefined);
     setGeneratedPlan(plan);
     setIsGenerating(false);
     setCurrentStep(4);

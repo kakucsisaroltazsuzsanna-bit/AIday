@@ -24,8 +24,10 @@ export default function ProjectsPage() {
 
     const durationWeeks = differenceInWeeks(formData.targetDeadline, formData.startDate);
 
+    const projectId = `proj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     const newProject: Project = {
-      id: `proj-${Date.now()}`,
+      id: projectId,
       title: formData.title,
       description: formData.description,
       designBrief: formData.designBrief,
@@ -48,7 +50,7 @@ export default function ProjectsPage() {
         ...phase,
         tasks: phase.tasks.map((task) => ({
           ...task,
-          projectId: `proj-${Date.now()}`,
+          projectId: projectId,
           phase: phase.name,
           status: 'todo' as const,
           startWeek: 0,

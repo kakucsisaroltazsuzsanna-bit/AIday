@@ -39,19 +39,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
-    const newId = `project-${Date.now()}`;
+    const newId = `project-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const duplicatedProject: Project = {
       ...project,
       id: newId,
       title: `${project.title} (Copy)`,
       status: 'planning',
       progress: 0,
-      phases: project.phases.map(phase => ({
+      phases: project.phases.map((phase, phaseIndex) => ({
         ...phase,
-        id: `phase-${Date.now()}-${phase.id}`,
-        tasks: phase.tasks.map(task => ({
+        id: `phase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${phaseIndex}`,
+        tasks: phase.tasks.map((task, taskIndex) => ({
           ...task,
-          id: `task-${Date.now()}-${task.id}`,
+          id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${taskIndex}`,
           projectId: newId,
           status: 'todo' as const,
         })),
@@ -91,7 +91,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
           const newTask: Task = {
             ...task,
-            id: `task-${Date.now()}`,
+            id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             projectId,
           };
 
@@ -172,7 +172,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
         const newTask: Task = {
           ...taskToDuplicate,
-          id: `task-${Date.now()}`,
+          id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           title: `${taskToDuplicate.title} (Copy)`,
           status: 'todo',
         };

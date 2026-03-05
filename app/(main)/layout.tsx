@@ -1,17 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AIAssistant from '@/components/AIAssistant';
 import NewProjectModal from '@/components/NewProjectModal';
+import OnboardingModal from '@/components/OnboardingModal';
 import { ProjectProvider, useProjects } from '@/lib/context/ProjectContext';
-import { NewProjectFormData, GeneratedPhase, Project } from '@/lib/types';
+import { DesignerProfileProvider, useDesignerProfile } from '@/lib/context/DesignerProfileContext';
+import { NewProjectFormData, GeneratedPhase, Project, DesignerProfile } from '@/lib/types';
 import { differenceInWeeks } from 'date-fns';
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { addProject } = useProjects();
+  const { profile, updateProfile, isOnboardingComplete } = useDesignerProfile();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [prefilledData, setPrefilledData] = useState<Partial<NewProjectFormData> | undefined>();
+
+  // Show onboarding if not completed
+  useEffect(() => {
+    if (!isOnboardingComplete) {
+      const timer = setTimeout(() => setShowOnboarding(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnboardingComplete]);
+
+  const handleOnboardingComplete = (newProfile: DesignerProfile) => {
+    updateProfile(newProfile);
+    setShowOnboarding(false);
+  };
 
   const handleOpenProjectModal = (prefilled?: any) => {
     if (prefilled) {
@@ -41,8 +58,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     const durationWeeks = differenceInWeeks(formData.targetDeadline, formData.startDate);
 
+    const projectId = `proj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     const newProject: Project = {
-      id: `proj-${Date.now()}`,
+      id: projectId,
       title: formData.title,
       description: formData.description,
       designBrief: formData.designBrief,
@@ -65,7 +84,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         ...phase,
         tasks: phase.tasks.map((task) => ({
           ...task,
-          projectId: `proj-${Date.now()}`,
+          projectId: projectId,
           phase: phase.name,
           status: 'todo' as const,
           startWeek: 0,
@@ -89,6 +108,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         </main>
         <AIAssistant onOpenProjectModal={handleOpenProjectModal} />
       </div>
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
       <NewProjectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -105,8 +128,10 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProjectProvider>
-      <MainLayoutContent>{children}</MainLayoutContent>
-    </ProjectProvider>
+    <DesignerProfileProvider>
+      <ProjectProvider>
+        <MainLayoutContent>{children}</MainLayoutContent>
+      </ProjectProvider>
+    </DesignerProfileProvider>
   );
 }

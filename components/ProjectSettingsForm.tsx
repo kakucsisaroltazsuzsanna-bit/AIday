@@ -1,8 +1,9 @@
 'use client';
 
 import { NewProjectFormData, Methodology, ExperienceLevel } from '@/lib/types';
-import { Sparkles, Users, Clock, TrendingUp } from 'lucide-react';
+import { Sparkles, Users, Clock, TrendingUp, User } from 'lucide-react';
 import { getMethodologyRecommendation } from '@/lib/aiPlanGenerator';
+import { useDesignerProfile } from '@/lib/context/DesignerProfileContext';
 
 interface ProjectSettingsFormProps {
   formData: NewProjectFormData;
@@ -21,14 +22,32 @@ const methodologies: (Methodology | 'Let AI choose')[] = [
 const experienceLevels: ExperienceLevel[] = ['Junior', 'Mid-level', 'Senior'];
 
 export default function ProjectSettingsForm({ formData, onChange }: ProjectSettingsFormProps) {
+  const { profile } = useDesignerProfile();
+
   const handleChange = (field: keyof NewProjectFormData, value: any) => {
     onChange({ ...formData, [field]: value });
   };
 
-  const recommendation = getMethodologyRecommendation(formData);
+  const recommendation = getMethodologyRecommendation(formData, profile || undefined);
 
   return (
     <div className="space-y-6">
+      {profile && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-start gap-3">
+            <User className="mt-0.5 h-5 w-5 text-blue-600" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">Designer Profile Active</p>
+              <p className="mt-1 text-xs text-blue-700">
+                AI will customize this plan based on your {profile.yearsOfExperience} years of experience,
+                {profile.specialties.length > 0 && ` ${profile.specialties[0]} expertise,`} and
+                {profile.weeklyAvailability} hrs/week availability.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="mb-3 block text-sm font-medium text-gray-900">
           Design Methodology
